@@ -4,7 +4,7 @@
 
 begin;
 
-select plan(16);
+select plan(17);
 
 -- event_types
 
@@ -46,6 +46,33 @@ select throws_ok(
   '23505',
   null,
   'platforms rejects a case-insensitive duplicate name'
+);
+
+-- Deactivating a lookup row preserves existing references (no cascade/delete
+-- is tied to is_active anywhere in the schema; this proves it stays that way).
+
+insert into public.event_types (name) values ('Deactivation Test Type');
+
+insert into public.clients (name, email)
+values ('Deactivation Test Client', 'deactivation-test@example.com');
+
+insert into public.events (client_id, event_type_id, location)
+select
+  (select id from public.clients where email = 'deactivation-test@example.com'),
+  (select id from public.event_types where name = 'Deactivation Test Type'),
+  'Salon Test';
+
+update public.event_types set is_active = false where name = 'Deactivation Test Type';
+
+select is(
+  (
+    select count(*)::int
+    from public.events e
+    join public.event_types et on et.id = e.event_type_id
+    where et.name = 'Deactivation Test Type' and et.is_active = false
+  ),
+  1,
+  'event referencing a deactivated event_types row is preserved and the FK reference still resolves'
 );
 
 select * from finish();
