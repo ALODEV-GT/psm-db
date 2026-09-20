@@ -11,8 +11,8 @@ select plan(35);
 
 insert into public.clients (id, name) values ('11111111-1111-1111-1111-111111111111', 'Fixture Client');
 insert into public.event_types (id, name) values ('22222222-2222-2222-2222-222222222222', 'Boda Fixture');
-insert into public.events (id, client_id, event_type_id, location)
-values ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Salon A');
+insert into public.events (id, client_id, event_type_id, location, event_date)
+values ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Salon A', '2026-03-10');
 
 -- ==========================================================================
 -- event_checklist
