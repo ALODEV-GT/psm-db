@@ -2,7 +2,7 @@
 
 Supabase (Postgres) local dev stack for proyecto1 (Producciones Santa María).
 
-This repo owns the schema only: 11 SQL migrations, RLS, a pgTAP test suite,
+This repo owns the schema only: 12 SQL migrations, RLS, a pgTAP test suite,
 and seed data. It has no backend or frontend code, and is meant to be
 verified completely on its own before `backend-api` (a separate repo/change)
 starts consuming it.
@@ -24,13 +24,13 @@ starts consuming it.
 ```bash
 npm install
 npm run db:start      # or: npx supabase start
-npm run db:setup      # supabase db reset (applies all 11 migrations + seed.sql)
+npm run db:setup      # supabase db reset (applies all 12 migrations + seed.sql)
                        # + scripts/seed-dev-data.mjs (auth users + sample domain data)
 ```
 
 `npm run db:start` boots the full local stack (Postgres on `54322`, the REST
 API on `54321`, Studio on `54323`, Inbucket/Mailpit for local email capture
-on `54324`). `npm run db:setup` runs `db:reset` (all 11 migrations plus the
+on `54324`). `npm run db:setup` runs `db:reset` (all 12 migrations plus the
 lookup-table seed in `supabase/seed.sql`) and then `db:seed`
 (`scripts/seed-dev-data.mjs`), which creates 3 auth users (admin, usuario,
 tecnico) via the Supabase Admin API and a small set of sample
@@ -106,7 +106,7 @@ running, before any backend work depends on it:
 ```bash
 npm install
 npx supabase start                 # boots cleanly
-npx supabase db reset              # applies all 11 migrations, zero errors
+npx supabase db reset              # applies all 12 migrations, zero errors
 npx supabase db reset              # run a second time: idempotent, identical schema
 npm run db:setup && npm run db:test   # full pgTAP suite green
 ```
@@ -117,6 +117,23 @@ columns/constraints/FKs, the polymorphic `event_services` CHECK math
 rows can only attach to a `transmision_en_vivo` service), the generated
 `subtotal`/`net_result` columns, the reporting views, `seed.sql`
 idempotency, and the whole-schema RLS default-deny proof described above.
+
+### Event date model (migration `event_date_per_event`)
+
+The event date is per event (`events.event_date date NOT NULL`, no default,
+indexed), not per service: every service of an event shares that date, and
+`event_services` keeps only per-service `start_time`/`end_time`. The
+`event_schedule` view still returns `(event_id, starts_at, ends_at,
+staff_count)`; `starts_at`/`ends_at` are `event_date` plus the earliest hourly
+`start_time` / latest hourly `end_time`, falling back to `event_date 00:00`
+for events with no timed service, so they are never null. Because the legacy
+`service_date` column no longer exists, the backfill logic (earliest
+`service_date`, else `created_at::date`) is proven by a scratch-database
+script rather than pgTAP:
+
+```bash
+bash scripts/verify-event-date-backfill.sh   # needs the local stack running
+```
 
 You can also confirm Studio (`http://127.0.0.1:54323` by default) shows all
 14 tables plus the 3 reporting views, RLS enabled on every table, and the
