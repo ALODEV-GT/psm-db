@@ -13,19 +13,19 @@ select plan(39);
 
 insert into public.clients (id, name) values ('11111111-1111-1111-1111-111111111111', 'Fixture Client');
 insert into public.event_types (id, name) values ('22222222-2222-2222-2222-222222222222', 'Boda Fixture');
-insert into public.events (id, client_id, event_type_id, location)
-values ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Salon A');
+insert into public.events (id, client_id, event_type_id, location, event_date)
+values ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Salon A', '2026-03-10');
 
-insert into public.event_services (id, event_id, service_type, service_date, start_time, end_time, price_per_hour, visibility, stream_title, stream_description)
+insert into public.event_services (id, event_id, service_type, start_time, end_time, price_per_hour, visibility, stream_title, stream_description)
 values (
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '33333333-3333-3333-3333-333333333333', 'transmision_en_vivo',
-  current_date, '09:00', '12:00', 200, 'publico', 'Wedding stream', 'Live wedding ceremony'
+  '09:00', '12:00', 200, 'publico', 'Wedding stream', 'Live wedding ceremony'
 );
 
-insert into public.event_services (id, event_id, service_type, service_date, start_time, end_time, price_per_hour)
+insert into public.event_services (id, event_id, service_type, start_time, end_time, price_per_hour)
 values (
   'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '33333333-3333-3333-3333-333333333333', 'fotografias',
-  current_date, '13:00', '15:00', 100
+  '13:00', '15:00', 100
 );
 
 insert into public.platforms (id, name) values ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Facebook Fixture');
