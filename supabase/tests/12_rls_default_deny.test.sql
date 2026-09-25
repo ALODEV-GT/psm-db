@@ -1,5 +1,5 @@
 -- pgTAP test: RLS default-deny, whole schema
--- Proves the D5 security posture end-to-end for all 14 domain tables in one
+-- Proves the D5 security posture end-to-end for all 15 domain tables in one
 -- pass: RLS enabled + zero policies + explicit `revoke all from anon,
 -- authenticated` means the anon role can read zero rows from any table.
 --
@@ -18,7 +18,7 @@
 
 begin;
 
-select plan(14);
+select plan(15);
 
 set role anon;
 select throws_ok(
@@ -129,6 +129,14 @@ select throws_ok(
   $$ select 1 from public.event_closures limit 1 $$,
   '42501', null,
   'anon cannot read any row from event_closures'
+);
+reset role;
+
+set role anon;
+select throws_ok(
+  $$ select 1 from public.expense_types limit 1 $$,
+  '42501', null,
+  'anon cannot read any row from expense_types'
 );
 reset role;
 

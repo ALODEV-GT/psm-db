@@ -106,12 +106,12 @@ running, before any backend work depends on it:
 ```bash
 npm install
 npx supabase start                 # boots cleanly
-npx supabase db reset              # applies all 12 migrations, zero errors
+npx supabase db reset              # applies all 13 migrations, zero errors
 npx supabase db reset              # run a second time: idempotent, identical schema
 npm run db:setup && npm run db:test   # full pgTAP suite green
 ```
 
-`npm run db:test` runs 13 pgTAP files covering: every table's expected
+`npm run db:test` runs 14 pgTAP files covering: every table's expected
 columns/constraints/FKs, the polymorphic `event_services` CHECK math
 (hourly vs. unit pricing), the D10 livestream-child gating (platform/phone
 rows can only attach to a `transmision_en_vivo` service), the generated
@@ -136,7 +136,7 @@ bash scripts/verify-event-date-backfill.sh   # needs the local stack running
 ```
 
 You can also confirm Studio (`http://127.0.0.1:54323` by default) shows all
-14 tables plus the 3 reporting views, RLS enabled on every table, and the
+15 tables plus the 3 reporting views, RLS enabled on every table, and the
 seeded sample data (2 clients, 2 events — one of them multi-service with a
 `transmision_en_vivo` service linked to 2 platforms and 2 phone numbers,
 plus one fully closed event with collaborators/expenses/a closure row).

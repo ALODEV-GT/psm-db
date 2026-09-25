@@ -5,7 +5,7 @@
 
 begin;
 
-select plan(46);
+select plan(53);
 
 -- Fixtures: client, event_type, event, one profile (via auth.users insert
 -- so handle_new_user's trigger creates the profiles row)
@@ -147,12 +147,16 @@ select col_is_null('public', 'event_expenses', 'profile_id', 'event_expenses.pro
 select fk_ok('public', 'event_expenses', 'profile_id', 'public', 'profiles', 'id', 'event_expenses.profile_id FKs to profiles.id');
 
 select has_column('public', 'event_expenses', 'concept', 'event_expenses has concept column');
-select col_not_null('public', 'event_expenses', 'concept', 'event_expenses.concept is NOT NULL');
+select col_is_null('public', 'event_expenses', 'concept', 'event_expenses.concept is nullable (optional note, expense_type_id is now the primary categorization)');
 
 select has_column('public', 'event_expenses', 'amount', 'event_expenses has amount column');
 select col_not_null('public', 'event_expenses', 'amount', 'event_expenses.amount is NOT NULL');
 
 select has_column('public', 'event_expenses', 'incurred_on', 'event_expenses has incurred_on column');
+
+select has_column('public', 'event_expenses', 'expense_type_id', 'event_expenses has expense_type_id column');
+select col_is_null('public', 'event_expenses', 'expense_type_id', 'event_expenses.expense_type_id is nullable (no backfill for existing rows)');
+select fk_ok('public', 'event_expenses', 'expense_type_id', 'public', 'expense_types', 'id', 'event_expenses.expense_type_id FKs to expense_types.id');
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.event_expenses'::regclass),
@@ -164,7 +168,7 @@ select throws_ok(
      values ('33333333-3333-3333-3333-333333333333', '   ', 25) $$,
   '23514',
   null,
-  'event_expenses rejects a blank concept'
+  'event_expenses rejects a present-but-blank concept'
 );
 
 select throws_ok(
@@ -179,6 +183,35 @@ select lives_ok(
   $$ insert into public.event_expenses (event_id, concept, amount)
      values ('33333333-3333-3333-3333-333333333333', 'Catering', 25.50) $$,
   'event_expenses accepts a valid positive amount'
+);
+
+select lives_ok(
+  $$ insert into public.event_expenses (event_id, amount)
+     values ('33333333-3333-3333-3333-333333333333', 15) $$,
+  'event_expenses accepts a null concept (existing rows, no backfill)'
+);
+
+insert into public.expense_types (id, name) values ('55555555-5555-5555-5555-555555555555', 'Transporte Fixture');
+
+select lives_ok(
+  $$ insert into public.event_expenses (event_id, expense_type_id, amount)
+     values ('33333333-3333-3333-3333-333333333333', '55555555-5555-5555-5555-555555555555', 40) $$,
+  'event_expenses accepts a valid expense_type_id'
+);
+
+select throws_ok(
+  $$ insert into public.event_expenses (event_id, expense_type_id, amount)
+     values ('33333333-3333-3333-3333-333333333333', '99999999-9999-9999-9999-999999999999', 40) $$,
+  '23503',
+  null,
+  'event_expenses rejects a non-existent expense_type_id (RESTRICT FK)'
+);
+
+select throws_ok(
+  $$ delete from public.expense_types where id = '55555555-5555-5555-5555-555555555555' $$,
+  '23503',
+  null,
+  'deleting an expense_types row still referenced by event_expenses is rejected (RESTRICT)'
 );
 
 select * from finish();
