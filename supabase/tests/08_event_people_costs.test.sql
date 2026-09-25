@@ -5,7 +5,7 @@
 
 begin;
 
-select plan(52);
+select plan(53);
 
 -- Fixtures: client, event_type, event, one profile (via auth.users insert
 -- so handle_new_user's trigger creates the profiles row)
@@ -197,6 +197,14 @@ select lives_ok(
   $$ insert into public.event_expenses (event_id, expense_type_id, amount)
      values ('33333333-3333-3333-3333-333333333333', '55555555-5555-5555-5555-555555555555', 40) $$,
   'event_expenses accepts a valid expense_type_id'
+);
+
+select throws_ok(
+  $$ insert into public.event_expenses (event_id, expense_type_id, amount)
+     values ('33333333-3333-3333-3333-333333333333', '99999999-9999-9999-9999-999999999999', 40) $$,
+  '23503',
+  null,
+  'event_expenses rejects a non-existent expense_type_id (RESTRICT FK)'
 );
 
 select throws_ok(
