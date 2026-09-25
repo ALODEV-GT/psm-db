@@ -1,11 +1,11 @@
 -- pgTAP test: supabase/seed.sql
--- Asserts seed.sql loads the expected event_types/platforms rows on
--- `supabase db reset`, and that its ON CONFLICT clauses make a re-run
--- idempotent (no duplicate-key error, no row-count change).
+-- Asserts seed.sql loads the expected event_types/platforms/expense_types
+-- rows on `supabase db reset`, and that its ON CONFLICT clauses make a
+-- re-run idempotent (no duplicate-key error, no row-count change).
 
 begin;
 
-select plan(4);
+select plan(5);
 
 select is(
   (
@@ -25,6 +25,16 @@ select is(
   ),
   3,
   'seed.sql loads the three expected platforms rows'
+);
+
+select is(
+  (
+    select count(*)::int
+    from public.expense_types
+    where lower(name) in ('internet', 'transporte', 'alimentación', 'otros')
+  ),
+  4,
+  'seed.sql loads the four expected expense_types rows'
 );
 
 -- Idempotency: re-running the same insert pattern must not error and must
