@@ -66,13 +66,13 @@ safe to run repeatedly against local dev.
 
 **RLS is a default-deny safety net. It is not the authorization boundary.**
 
-Every one of the 14 domain tables has row-level security **enabled with
+Every one of the 15 domain tables has row-level security **enabled with
 zero policies**, plus an explicit `revoke all on <table> from anon,
 authenticated`. Concretely: an anonymous or `authenticated`-role query
 against any table is rejected outright (Postgres `42501: permission
 denied`, surfaced by PostgREST as an HTTP error) — not silently filtered to
 an empty result set. `supabase/tests/12_rls_default_deny.test.sql` proves
-this for all 14 tables in one pass by executing each query as the `anon`
+this for all 15 tables in one pass by executing each query as the `anon`
 role, the same role PostgREST assumes per-request for the anon API key.
 
 This exists purely as a backstop — a bug in the backend, a leaked anon key,
@@ -106,12 +106,12 @@ running, before any backend work depends on it:
 ```bash
 npm install
 npx supabase start                 # boots cleanly
-npx supabase db reset              # applies all 13 migrations, zero errors
+npx supabase db reset              # applies all 14 migrations, zero errors
 npx supabase db reset              # run a second time: idempotent, identical schema
 npm run db:setup && npm run db:test   # full pgTAP suite green
 ```
 
-`npm run db:test` runs 14 pgTAP files covering: every table's expected
+`npm run db:test` runs 15 pgTAP files covering: every table's expected
 columns/constraints/FKs, the polymorphic `event_services` CHECK math
 (hourly vs. unit pricing), the D10 livestream-child gating (platform/phone
 rows can only attach to a `transmision_en_vivo` service), the generated
