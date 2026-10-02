@@ -2,17 +2,26 @@
 -- Asserts event_checklist (unique(event_id, item), is_completed <->
 -- completed_at CHECK) and timeline_notes (body/elapsed-time CHECKs) shape,
 -- event_id CASCADE, and RLS default-deny.
+--
+-- event_checklist.item was changed from the checklist_item enum to free
+-- text, and a nullable template_id FK to checklist_templates was added, by
+-- migration 20261001200000_checklist_templates.sql (checklist items became
+-- admin-configurable). This file was updated accordingly: item-column
+-- assertions now expect `text`, and new assertions cover template_id's
+-- shape and its `on delete set null` behavior.
 
 begin;
 
-select plan(35);
+select plan(39);
 
--- Fixtures: client, event_type, event
+-- Fixtures: client, event_type, event, checklist_template
 
 insert into public.clients (id, name) values ('11111111-1111-1111-1111-111111111111', 'Fixture Client');
 insert into public.event_types (id, name) values ('22222222-2222-2222-2222-222222222222', 'Boda Fixture');
 insert into public.events (id, client_id, event_type_id, location, event_date)
 values ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Salon A', '2026-03-10');
+insert into public.checklist_templates (id, service_type, item)
+values ('44444444-4444-4444-4444-444444444444', 'fotografias', 'Fixture Template Item');
 
 -- ==========================================================================
 -- event_checklist
@@ -26,7 +35,11 @@ select fk_ok('public', 'event_checklist', 'event_id', 'public', 'events', 'id', 
 
 select has_column('public', 'event_checklist', 'item', 'event_checklist has item column');
 select col_not_null('public', 'event_checklist', 'item', 'event_checklist.item is NOT NULL');
-select col_type_is('public', 'event_checklist', 'item', 'checklist_item', 'event_checklist.item is checklist_item enum');
+select col_type_is('public', 'event_checklist', 'item', 'text', 'event_checklist.item is text');
+
+select has_column('public', 'event_checklist', 'template_id', 'event_checklist has template_id column');
+select col_is_null('public', 'event_checklist', 'template_id', 'event_checklist.template_id is nullable');
+select fk_ok('public', 'event_checklist', 'template_id', 'public', 'checklist_templates', 'id', 'event_checklist.template_id FKs to checklist_templates.id');
 
 select has_column('public', 'event_checklist', 'is_completed', 'event_checklist has is_completed column');
 select col_not_null('public', 'event_checklist', 'is_completed', 'event_checklist.is_completed is NOT NULL');
@@ -40,6 +53,26 @@ select fk_ok('public', 'event_checklist', 'completed_by', 'public', 'profiles', 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.event_checklist'::regclass),
   'RLS is enabled on event_checklist'
+);
+
+-- template_id FK on delete set null: deleting a referenced checklist
+-- template must not remove or break the event_checklist row, only null
+-- out its template_id.
+
+insert into public.event_checklist (id, event_id, item, template_id)
+values (
+  '55555555-5555-5555-5555-555555555555',
+  '33333333-3333-3333-3333-333333333333',
+  'Fixture Template Item',
+  '44444444-4444-4444-4444-444444444444'
+);
+
+delete from public.checklist_templates where id = '44444444-4444-4444-4444-444444444444';
+
+select is(
+  (select template_id from public.event_checklist where id = '55555555-5555-5555-5555-555555555555'),
+  null,
+  'deleting a referenced checklist_templates row nulls event_checklist.template_id instead of breaking the row'
 );
 
 -- unique(event_id, item)
