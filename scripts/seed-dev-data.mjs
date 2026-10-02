@@ -20,13 +20,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createClient } from "@supabase/supabase-js";
 import { pathToFileURL } from "node:url";
-import {
-  createUsers,
-  fetchLookupId,
-  seedClients,
-  seedClosedEvent,
-  seedOpenEvent,
-} from "./lib/seed-domain-data.mjs";
+import { createUsers } from "./lib/seed-domain-data.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -121,28 +115,9 @@ async function main() {
     return;
   }
 
-  const profileIds = await createUsers(supabase);
-  const { ramirezId, garciaId } = await seedClients(supabase, profileIds.admin);
-  const [bodaTypeId, cumpleanosTypeId] = await Promise.all([
-    fetchLookupId(supabase, "event_types", "Boda"),
-    fetchLookupId(supabase, "event_types", "Cumpleaños"),
-  ]);
+  await createUsers(supabase);
 
-  await seedOpenEvent(supabase, {
-    adminId: profileIds.admin,
-    tecnicoId: profileIds.tecnico,
-    usuarioId: profileIds.usuario,
-    clientId: ramirezId,
-    eventTypeId: bodaTypeId,
-  });
-
-  await seedClosedEvent(supabase, {
-    adminId: profileIds.admin,
-    clientId: garciaId,
-    eventTypeId: cumpleanosTypeId,
-  });
-
-  console.log("Seed complete: 3 users, 2 clients, 2 events (1 open, 1 closed).");
+  console.log("Seed complete: 3 users. No sample clients/events seeded.");
 }
 
 const isMainModule =

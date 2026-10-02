@@ -2,7 +2,7 @@
 
 Supabase (Postgres) local dev stack for proyecto1 (Producciones Santa María).
 
-This repo owns the schema only: 11 SQL migrations, RLS, a pgTAP test suite,
+This repo owns the schema only: 12 SQL migrations, RLS, a pgTAP test suite,
 and seed data. It has no backend or frontend code, and is meant to be
 verified completely on its own before `backend-api` (a separate repo/change)
 starts consuming it.
@@ -24,13 +24,13 @@ starts consuming it.
 ```bash
 npm install
 npm run db:start      # or: npx supabase start
-npm run db:setup      # supabase db reset (applies all 11 migrations + seed.sql)
+npm run db:setup      # supabase db reset (applies all 12 migrations + seed.sql)
                        # + scripts/seed-dev-data.mjs (auth users + sample domain data)
 ```
 
 `npm run db:start` boots the full local stack (Postgres on `54322`, the REST
 API on `54321`, Studio on `54323`, Inbucket/Mailpit for local email capture
-on `54324`). `npm run db:setup` runs `db:reset` (all 11 migrations plus the
+on `54324`). `npm run db:setup` runs `db:reset` (all 12 migrations plus the
 lookup-table seed in `supabase/seed.sql`) and then `db:seed`
 (`scripts/seed-dev-data.mjs`), which creates 3 auth users (admin, usuario,
 tecnico) via the Supabase Admin API and a small set of sample
@@ -66,13 +66,13 @@ safe to run repeatedly against local dev.
 
 **RLS is a default-deny safety net. It is not the authorization boundary.**
 
-Every one of the 14 domain tables has row-level security **enabled with
+Every one of the 15 domain tables has row-level security **enabled with
 zero policies**, plus an explicit `revoke all on <table> from anon,
 authenticated`. Concretely: an anonymous or `authenticated`-role query
 against any table is rejected outright (Postgres `42501: permission
 denied`, surfaced by PostgREST as an HTTP error) — not silently filtered to
 an empty result set. `supabase/tests/12_rls_default_deny.test.sql` proves
-this for all 14 tables in one pass by executing each query as the `anon`
+this for all 15 tables in one pass by executing each query as the `anon`
 role, the same role PostgREST assumes per-request for the anon API key.
 
 This exists purely as a backstop — a bug in the backend, a leaked anon key,
@@ -106,20 +106,37 @@ running, before any backend work depends on it:
 ```bash
 npm install
 npx supabase start                 # boots cleanly
-npx supabase db reset              # applies all 11 migrations, zero errors
+npx supabase db reset              # applies all 14 migrations, zero errors
 npx supabase db reset              # run a second time: idempotent, identical schema
 npm run db:setup && npm run db:test   # full pgTAP suite green
 ```
 
-`npm run db:test` runs 13 pgTAP files covering: every table's expected
+`npm run db:test` runs 15 pgTAP files covering: every table's expected
 columns/constraints/FKs, the polymorphic `event_services` CHECK math
 (hourly vs. unit pricing), the D10 livestream-child gating (platform/phone
 rows can only attach to a `transmision_en_vivo` service), the generated
 `subtotal`/`net_result` columns, the reporting views, `seed.sql`
 idempotency, and the whole-schema RLS default-deny proof described above.
 
+### Event date model (migration `event_date_per_event`)
+
+The event date is per event (`events.event_date date NOT NULL`, no default,
+indexed), not per service: every service of an event shares that date, and
+`event_services` keeps only per-service `start_time`/`end_time`. The
+`event_schedule` view still returns `(event_id, starts_at, ends_at,
+staff_count)`; `starts_at`/`ends_at` are `event_date` plus the earliest hourly
+`start_time` / latest hourly `end_time`, falling back to `event_date 00:00`
+for events with no timed service, so they are never null. Because the legacy
+`service_date` column no longer exists, the backfill logic (earliest
+`service_date`, else `created_at::date`) is proven by a scratch-database
+script rather than pgTAP:
+
+```bash
+bash scripts/verify-event-date-backfill.sh   # needs the local stack running
+```
+
 You can also confirm Studio (`http://127.0.0.1:54323` by default) shows all
-14 tables plus the 3 reporting views, RLS enabled on every table, and the
+15 tables plus the 3 reporting views, RLS enabled on every table, and the
 seeded sample data (2 clients, 2 events — one of them multi-service with a
 `transmision_en_vivo` service linked to 2 platforms and 2 phone numbers,
 plus one fully closed event with collaborators/expenses/a closure row).

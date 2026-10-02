@@ -3,6 +3,9 @@
 // the admin-API user creation (design.md D1/D2). Split out of
 // seed-dev-data.mjs to keep that file focused on credential resolution and
 // the loopback guard (code-style soft file-length limit).
+//
+// The event date lives on the event (events.event_date, NOT NULL); services
+// only carry per-service start_time/end_time — there is no service_date.
 
 export const DEV_PASSWORD = "DevPassword123";
 
@@ -85,6 +88,7 @@ export async function seedOpenEvent(supabase, { adminId, tecnicoId, usuarioId, c
       client_id: clientId,
       event_type_id: eventTypeId,
       location: "Salón Los Álamos, zona 10, Guatemala",
+      event_date: "2026-11-14",
       notes: "Evento de muestra generado por el seed de desarrollo.",
       deposit_amount: 1500,
       status: "programado",
@@ -101,7 +105,6 @@ export async function seedOpenEvent(supabase, { adminId, tecnicoId, usuarioId, c
     .insert({
       event_id: eventId,
       service_type: "transmision_en_vivo",
-      service_date: "2026-11-14",
       start_time: "16:00",
       end_time: "20:00",
       price_per_hour: 350,
@@ -170,6 +173,7 @@ export async function seedClosedEvent(supabase, { adminId, clientId, eventTypeId
       client_id: clientId,
       event_type_id: eventTypeId,
       location: "Salón Jardines del Recuerdo, zona 15, Guatemala",
+      event_date: "2026-09-01",
       deposit_amount: 500,
       status: "cerrado",
       title: "Cumpleaños García",

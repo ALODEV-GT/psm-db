@@ -56,11 +56,12 @@ insert into public.event_types (name) values ('Deactivation Test Type');
 insert into public.clients (name, email)
 values ('Deactivation Test Client', 'deactivation-test@example.com');
 
-insert into public.events (client_id, event_type_id, location)
+insert into public.events (client_id, event_type_id, location, event_date)
 select
   (select id from public.clients where email = 'deactivation-test@example.com'),
   (select id from public.event_types where name = 'Deactivation Test Type'),
-  'Salon Test';
+  'Salon Test',
+  '2026-03-10';
 
 update public.event_types set is_active = false where name = 'Deactivation Test Type';
 

@@ -1,9 +1,12 @@
 -- pgTAP test: migration 00_foundation
--- Asserts the 5 domain enums and the set_updated_at() trigger function exist.
+-- Asserts the 4 domain enums and the set_updated_at() trigger function
+-- exist. public.checklist_item (originally a 5th enum here) was dropped by
+-- migration 20261001200000_checklist_templates.sql: event_checklist.item
+-- became free text once checklist items became admin-configurable.
 
 begin;
 
-select plan(12);
+select plan(11);
 
 -- Enums exist with the exact PRD-derived label sets (design.md "Enums (migration 00)")
 
@@ -38,12 +41,7 @@ select enum_has_labels(
   'livestream_visibility has the expected labels'
 );
 
-select has_type('public', 'checklist_item', 'checklist_item enum exists');
-select enum_has_labels(
-  'public', 'checklist_item',
-  array['audio', 'video', 'conexion', 'plataforma'],
-  'checklist_item has the expected labels'
-);
+select hasnt_type('public', 'checklist_item', 'checklist_item enum was dropped (checklist items are now admin-configurable text)');
 
 -- Shared trigger function used by every later table's updated_at column
 
